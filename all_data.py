@@ -26,6 +26,27 @@ bno.enable_feature(adafruit_bno08x.BNO_REPORT_GRAVITY)
 print("BNO085 IMU initialized. Reading data...\n")
 
 
+def quaternion_to_heading_deg(qi: float, qj: float, qk: float, qr: float) -> float:
+    """
+    Convert quaternion (i, j, k, real) from BNO055 into heading in degrees [0, 360).
+    """
+
+    # Precompute reused terms
+    yy = qj * qj
+    zz = qk * qk
+
+    yaw = math.atan2(
+        2.0 * (qr * qk + qi * qj),
+        1.0 - 2.0 * (yy + zz)
+    )
+
+    heading = math.degrees(yaw)
+
+    heading = (heading + 360.0) % 360.0  # Normalize to [0, 360)
+
+    return heading
+
+
 try:
     while True:
         # Rotation vector (quaternion) - fused orientation
@@ -51,6 +72,10 @@ try:
         grav_x, grav_y, grav_z = bno.gravity
         print(f"Gravity     - x: {grav_x:+.4f}  y: {grav_y:+.4f}  z: {grav_z:+.4f}")
         
+		# Calculated heading
+        heading_deg = quaternion_to_heading_deg(quat_i, quat_j, quat_k, quat_real)
+        print(f"Heading (°) - {heading_deg:.2f}")
+
         print("-" * 60)
         time.sleep(0.1)  # 10 Hz update rate
 
